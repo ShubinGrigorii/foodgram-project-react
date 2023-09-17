@@ -82,16 +82,15 @@ class DefaultUserViewSet(UserViewSet):
             Subscription.objects.create(user=user, author=author)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        subscription_exists = Subscription.objects.filter(
-            user=user, author=author).exists()
-        if not subscription_exists:
+        subscribe = Subscription.objects.filter(user=user, author=author)
+        if not subscribe:
             return Response(
                 {
                     'errors': 'Вы не подписаны на этого автора'
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
-        Subscription.objects.filter(user=user, author=author).delete()
+        subscribe.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=['get'],
