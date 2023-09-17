@@ -45,7 +45,7 @@ class RecipeAdmin(admin.ModelAdmin):
 
     @staticmethod
     def tags(recipe):
-        tag_names = recipe.tags.values_list('name', flat=True)
+        tag_names = list(recipe.tags.values_list('name', flat=True))
         return ' '.join(tag_names)
 
     @admin.display(description='В избранном')

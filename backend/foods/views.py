@@ -82,8 +82,11 @@ class DefaultUserViewSet(UserViewSet):
             Subscription.objects.create(user=user, author=author)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        subscribe = Subscription.objects.filter(user=user, author=author)
-        if not subscribe:
+        subscribe = Subscription.objects.filter(
+            user=user,
+            author=author
+        )
+        if not subscribe.exists():
             return Response(
                 {
                     'errors': 'Вы не подписаны на этого автора'
@@ -211,12 +214,22 @@ class RecipeViewSet(ModelViewSet):
                 }
             )
             serializer.is_valid(raise_exception=True)
-            ShoppingCart.objects.create(user=user, recipe=recipe)
+            _, created = ShoppingCart.objects.get_or_create(
+                user=user,
+                recipe=recipe
+            )
+            if not created:
+                return Response(
+                    {'detail': 'Рецепт уже добавлен в список покупок'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         shopping_cart = ShoppingCart.objects.filter(
-            recipe=recipe.id, user=user.id)
-        if not shopping_cart:
+            recipe=recipe.id,
+            user=user.id
+        )
+        if not shopping_cart.exists():
             return Response(
                 {
                     'errors': 'Этого рецепта нет в списке покупок'

@@ -82,7 +82,13 @@ class UserSubscriptionsSerializer(serializers.ModelSerializer):
         limit = request.GET.get('recipes_limit')
         recipes = obj.recipes.all()
         if limit:
-            recipes = recipes[:int(limit)]
+            try:
+                limit = int(limit)
+            except ValueError:
+                raise serializers.ValidationError(
+                    'Параметр limit должен быть целочисленным'
+                )
+            recipes = recipes[:limit]
         serializer = RecipeMinifiedSerializer(
             recipes, many=True, read_only=True
         )
@@ -206,12 +212,14 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
         if not data:
             raise serializers.ValidationError('Добавьте ингредиент')
 
-        ingredients = []
-        for i, val in enumerate(data):
-            if not Ingredient.objects.filter(id=val['id']).exists():
-                raise serializers.ValidationError('Ингредиента не существует')
-            ingredients.append(val['id'])
+        ids = []
+        for _, val in enumerate(data):
+            ids.append(val['id'])
+        ingredients = list(Ingredient.objects.filter(
+            id__in=ids).values_list('id', flat=True))
 
+        if len(ingredients) != len(data):
+            raise serializers.ValidationError('Ингредиента не существует')
         if len(ingredients) != len(set(ingredients)):
             raise serializers.ValidationError('Ингредиенты повторяются')
         return data
@@ -240,7 +248,7 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
         RecipeIngredient.objects.bulk_create(
             [RecipeIngredient(
                 recipe=recipe,
-                ingredient=get_object_or_404(Ingredient, id=ingredient['id']),
+                ingredient_id=ingredient['id'],
                 amount=ingredient['amount']
             ) for ingredient in ingredients]
         )
@@ -257,10 +265,7 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
             RecipeIngredient.objects.bulk_create(
                 [RecipeIngredient(
                     recipe=recipe,
-                    ingredient=get_object_or_404(
-                        Ingredient,
-                        id=ingredient['id']
-                    ),
+                    ingredient_id=ingredient['id'],
                     amount=ingredient['amount']
                 ) for ingredient in ingredients]
             )
