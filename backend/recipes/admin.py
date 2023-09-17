@@ -45,10 +45,8 @@ class RecipeAdmin(admin.ModelAdmin):
 
     @staticmethod
     def tags(recipe):
-        tags = []
-        for tag in recipe.tags.all():
-            tags.append(tag.name)
-        return ' '.join(tags)
+        tag_names = recipe.tags.values_list('name', flat=True)
+        return ' '.join(tag_names)
 
     @admin.display(description='В избранном')
     def favorite_count(self, obj):
