@@ -165,7 +165,7 @@ class RecipeViewSet(ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         favorite = Favorite.objects.filter(user=user.id, recipe=recipe.id)
-        if not favorite:
+        if not favorite.exists():
             return Response(
                 {
                     'errors': 'Рецепта нет в избранном'
